@@ -11,15 +11,15 @@ TinyGPS++
 
 ## Pinout
 Pinout for TFT.   
-Display | NodeMCU   
---------|---------   
-LED     | +3V3   
-SCK     | D5   
-SDA     | D7   
-A0      | D4   
-RESET   | +3V3   
-CS      | D8   
-GND     | GND   
-VCC     | +3V3   
+|Display | NodeMCU |
+|--------|---------|  
+|LED     | +3V3    |
+|SCK     | D5      |
+|SDA     | D7      |
+|A0      | D4      |
+|RESET   | +3V3    |
+|CS      | D8      |
+|GND     | GND     |
+|VCC     | +3V3    |
 
 ## Resource
