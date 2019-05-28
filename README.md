@@ -10,7 +10,8 @@ Adafruit SSD1306
 TinyGPS++   
 
 ## Pinout
-Pinout for TFT.   
+Pinout for TFT. 
+
 |Display | NodeMCU |
 |--------|---------|  
 |LED     | +3V3    |
