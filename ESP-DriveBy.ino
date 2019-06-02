@@ -1,5 +1,6 @@
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
+// ESP-DriveBy Serial Monitor
+// v1.0 | Alex Lynd | alexlynd.com/projects/ESP-DriveBy
+
 #include <ESP8266WiFi.h>
 #include <SD.h>
 #include <SoftwareSerial.h>
@@ -8,13 +9,6 @@
 #include <Wire.h>
 
 #define SerialMonitor Serial
-
-#define OLED_ADDR   0x3C
-Adafruit_SSD1306 display(-1);
-
-#if (SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
 
 #define SD_CS    15
 #define LOG_FILE_PREFIX "log"
@@ -31,35 +25,20 @@ char * log_col_names[LOG_COLUMN_COUNT] = {
 #define LOG_RATE 500
 unsigned long lastLog = 0;
 
-static const int RX = 0, TX = 3;
+static const int RX= 0, TX= 3;
 static const uint32_t GPSBaud = 9600;
 SoftwareSerial ss(RX, TX); // RT
 TinyGPSPlus tinyGPS;
 
 void setup() {
   SerialMonitor.begin(115200);
-  display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-  display.clearDisplay();
-  display.display();  
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0,0);
   ss.begin(GPSBaud);
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  display.println(" ** Setup Routine **\n");
-  display.println("Setting up SD card...\n");
-  SerialMonitor.println("Initialize SD card."); display.display();
-  delay(200);
-  if (!SD.begin(SD_CS)) {
-    // tft.setTextColor(ST77XX_RED);
-    display.println("SD not found."); display.display();
-    SerialMonitor.println("Error initializing SD card.");
-  }
-  else {
-    // tft.setTextColor(ST77XX_GREEN);
-     display.println("SD card found."); display.display();
-  }
+  SerialMonitor.println("Starting ESP-DriveBy");
+  SerialMonitor.print("Setting up SD card: ");
+  if (!SD.begin(SD_CS))  SerialMonitor.println("found.");
+  else                   SerialMonitor.println("not found.");
   updateFileName();
   printHeader();
 }
@@ -205,8 +184,9 @@ void updateFileName() {
     }
   }
 
-   display.print("Creating: ");
-   display.println(logFileName); display.display();
+   SerialMonitor.print("Creating: ");
+   SerialMonitor.println(logFileName);
+   
   SerialMonitor.print("File name: ");
   SerialMonitor.println(logFileName);
 }
