@@ -6,7 +6,6 @@
 #include <SoftwareSerial.h>
 #include <SPI.h>
 #include <TinyGPS++.h>
-#include <Wire.h>
 
 #define SerialMonitor Serial
 
@@ -35,52 +34,39 @@ void setup() {
   ss.begin(GPSBaud);
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  SerialMonitor.println("Starting ESP-DriveBy");
+  SerialMonitor.println("\nStarting ESP-DriveBy");
+  // SD card setup
   SerialMonitor.print("Setting up SD card: ");
-  if (!SD.begin(SD_CS))  SerialMonitor.println("found.");
-  else                   SerialMonitor.println("not found.");
-  updateFileName();
-  printHeader();
+  if (!SD.begin(SD_CS)) { SerialMonitor.println("not found."); }
+  else { 
+    SerialMonitor.println("found."); 
+    initializeSD();
+  }
 }
 void lookForNetworks() {
-  int n = WiFi.scanNetworks();
-  if (n == 0) { SerialMonitor.println("no networks found"); } 
+  int n= WiFi.scanNetworks();
+  if (n== 0) { SerialMonitor.println("no networks found"); } 
   else {
     for (uint8_t i= 1; i <= n; ++i) {
       if ((isOnFile(WiFi.BSSIDstr(i)) == -1) && (WiFi.channel(i) > 0) && (WiFi.channel(i) < 15)) { // Avoid erroneous channels
         File logFile = SD.open(logFileName, FILE_WRITE);
         SerialMonitor.println("New network found");
-        logFile.print(WiFi.BSSIDstr(i));
-        logFile.print(',');
-        logFile.print(WiFi.SSID(i));
-        logFile.print(',');
-        logFile.print(getEncryption(i));
-        logFile.print(',');
-        logFile.print(tinyGPS.date.year());
-        logFile.print('-');
-        logFile.print(tinyGPS.date.month());
-        logFile.print('-');
-        logFile.print(tinyGPS.date.day());
-        logFile.print(' ');
-        logFile.print(tinyGPS.time.hour());
-        logFile.print(':');
-        logFile.print(tinyGPS.time.minute());
-        logFile.print(':');
-        logFile.print(tinyGPS.time.second());
-        logFile.print(',');
-        logFile.print(WiFi.channel(i));
-        logFile.print(',');
-        logFile.print(WiFi.RSSI(i));
-        logFile.print(',');
-        logFile.print(tinyGPS.location.lat(), 6);
-        logFile.print(',');
-        logFile.print(tinyGPS.location.lng(), 6);
-        logFile.print(',');
-        logFile.print(tinyGPS.altitude.meters(), 1);
-        logFile.print(',');
-        logFile.print((tinyGPS.hdop.value(), 1));
-        logFile.print(',');
-        logFile.print("WIFI");
+        logFile.print(WiFi.BSSIDstr(i));             logFile.print(',');
+        logFile.print(WiFi.SSID(i));                 logFile.print(',');
+        logFile.print(getEncryption(i));             logFile.print(',');
+        logFile.print(tinyGPS.date.year());          logFile.print('-');
+        logFile.print(tinyGPS.date.month());         logFile.print('-');
+        logFile.print(tinyGPS.date.day());           logFile.print(' ');
+        logFile.print(tinyGPS.time.hour());          logFile.print(':');
+        logFile.print(tinyGPS.time.minute());        logFile.print(':');
+        logFile.print(tinyGPS.time.second());        logFile.print(',');
+        logFile.print(WiFi.channel(i));              logFile.print(',');
+        logFile.print(WiFi.RSSI(i));                 logFile.print(',');
+        logFile.print(tinyGPS.location.lat(), 6);    logFile.print(',');
+        logFile.print(tinyGPS.location.lng(), 6);    logFile.print(',');
+        logFile.print(tinyGPS.altitude.meters(), 1); logFile.print(',');
+        logFile.print((tinyGPS.hdop.value(), 1));    logFile.print(',');
+        logFile.print("WIFI"); 
         logFile.println();
         logFile.close();
       }
@@ -155,40 +141,30 @@ int isOnFile(String mac) {
   }
 }
 
-void printHeader() {
-  File logFile = SD.open(logFileName, FILE_WRITE);
-  if (logFile) {
-    int i = 0;
-    logFile.println(wigleHeaderFileFormat);
-    for (; i < LOG_COLUMN_COUNT; i++) {
+void initializeSD() {
+  for (int i=0; i< MAX_LOG_FILES; i++) {
+    memset(logFileName, 0, strlen(logFileName));
+    sprintf(logFileName, "%s%d.%s", LOG_FILE_PREFIX, i, LOG_FILE_SUFFIX);
+    if (!SD.exists(logFileName)) { break; } 
+    else {
+      SerialMonitor.print("Last log at file ")
+      SerialMonitor.println(logFileName);
+    }
+  }
+   SerialMonitor.print("Creating log ");
+   SerialMonitor.println(logFileName);
+   File logFile= SD.open(logFileName, FILE_WRITE);
+   if (logFile) {
+     logFile.println(wigleHeaderFileFormat);
+     for (int i=0; i< LOG_COLUMN_COUNT; i++) {
       logFile.print(log_col_names[i]);
-      if (i < LOG_COLUMN_COUNT - 1)
+      if (i< LOG_COLUMN_COUNT- 1)
         logFile.print(',');
       else
         logFile.println();
     }
     logFile.close();
   }
-}
-
-void updateFileName() {
-  int i = 0;
-  for (; i < MAX_LOG_FILES; i++) {
-    memset(logFileName, 0, strlen(logFileName));
-    sprintf(logFileName, "%s%d.%s", LOG_FILE_PREFIX, i, LOG_FILE_SUFFIX);
-    if (!SD.exists(logFileName)) {
-      break;
-    } else {
-      SerialMonitor.print(logFileName);
-      SerialMonitor.println(" exists");
-    }
-  }
-
-   SerialMonitor.print("Creating: ");
-   SerialMonitor.println(logFileName);
-   
-  SerialMonitor.print("File name: ");
-  SerialMonitor.println(logFileName);
 }
 
 String getEncryption(uint8_t network) {
