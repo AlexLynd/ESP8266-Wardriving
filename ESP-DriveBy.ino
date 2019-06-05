@@ -1,6 +1,3 @@
-// ESP-DriveBy Serial Monitor
-// v1.0 | Alex Lynd | alexlynd.com/projects/ESP-DriveBy
-
 #include <ESP8266WiFi.h>
 #include <SD.h>
 #include <SoftwareSerial.h>
@@ -9,7 +6,7 @@
 
 #define SerialMonitor Serial
 
-#define SD_CS    15
+#define SD_CS    4
 #define LOG_FILE_PREFIX "log"
 #define LOG_FILE_SUFFIX "csv"
 #define MAX_LOG_FILES 100
@@ -24,7 +21,7 @@ char * log_col_names[LOG_COLUMN_COUNT] = {
 #define LOG_RATE 500
 unsigned long lastLog = 0;
 
-static const int RX= 0, TX= 3;
+static const int RX= 4, TX= 5;
 static const uint32_t GPSBaud = 9600;
 SoftwareSerial ss(RX, TX); // RT
 TinyGPSPlus tinyGPS;
@@ -146,12 +143,8 @@ void initializeSD() {
     memset(logFileName, 0, strlen(logFileName));
     sprintf(logFileName, "%s%d.%s", LOG_FILE_PREFIX, i, LOG_FILE_SUFFIX);
     if (!SD.exists(logFileName)) { break; } 
-    else {
-      SerialMonitor.print("Last log at file ")
-      SerialMonitor.println(logFileName);
-    }
   }
-   SerialMonitor.print("Creating log ");
+   SerialMonitor.print("Creating ");
    SerialMonitor.println(logFileName);
    File logFile= SD.open(logFileName, FILE_WRITE);
    if (logFile) {

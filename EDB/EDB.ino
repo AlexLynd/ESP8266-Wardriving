@@ -178,9 +178,9 @@ const unsigned char test [] = {
 };
 
 
-Adafruit_ST7735 tft = Adafruit_ST7735(16, 2, -1); // CS, DC, RST (sentinel)
+Adafruit_ST7735 tft = Adafruit_ST7735(4, 5, -1); // CS, DC, RST (sentinel)
 
-#define SD_CS    15
+#define SD_CS 2
 #define LOG_FILE_PREFIX "log"
 #define LOG_FILE_SUFFIX "csv"
 #define MAX_LOG_FILES 100
@@ -195,7 +195,7 @@ char * log_col_names[LOG_COLUMN_COUNT] = {
 #define LOG_RATE 500
 unsigned long lastLog = 0;
 
-static const int RX = 0, TX = 3;
+static const int RX = 0, TX = 15;
 static const uint32_t GPSBaud = 9600;
 SoftwareSerial ss(RX, TX); // RT
 TinyGPSPlus tinyGPS;
