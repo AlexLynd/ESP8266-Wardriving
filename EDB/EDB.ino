@@ -10,6 +10,8 @@
 
 #define SerialMonitor Serial
 int loops=0;
+double tmp_lat= 0;
+double tmp_lng= 0;
 
 const unsigned char bmp [] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -251,36 +253,21 @@ void lookForNetworks() {
       if ((isOnFile(WiFi.BSSIDstr(i)) == -1) && (WiFi.channel(i) > 0) && (WiFi.channel(i) < 15)) { // Avoid erroneous channels
         File logFile = SD.open(logFileName, FILE_WRITE);
         SerialMonitor.println("New network found");
-        logFile.print(WiFi.BSSIDstr(i));
-        logFile.print(',');
-        logFile.print(WiFi.SSID(i));
-        logFile.print(',');
-        logFile.print(getEncryption(i));
-        logFile.print(',');
-        logFile.print(tinyGPS.date.year());
-        logFile.print('-');
-        logFile.print(tinyGPS.date.month());
-        logFile.print('-');
-        logFile.print(tinyGPS.date.day());
-        logFile.print(' ');
-        logFile.print(tinyGPS.time.hour());
-        logFile.print(':');
-        logFile.print(tinyGPS.time.minute());
-        logFile.print(':');
-        logFile.print(tinyGPS.time.second());
-        logFile.print(',');
-        logFile.print(WiFi.channel(i));
-        logFile.print(',');
-        logFile.print(WiFi.RSSI(i));
-        logFile.print(',');
-        logFile.print(tinyGPS.location.lat(), 6);
-        logFile.print(',');
-        logFile.print(tinyGPS.location.lng(), 6);
-        logFile.print(',');
-        logFile.print(tinyGPS.altitude.meters(), 1);
-        logFile.print(',');
-        logFile.print((tinyGPS.hdop.value(), 1));
-        logFile.print(',');
+        logFile.print(WiFi.BSSIDstr(i)); logFile.print(',');
+        logFile.print(WiFi.SSID(i));     logFile.print(',');
+        logFile.print(getEncryption(i)); logFile.print(',');
+        logFile.print(tinyGPS.date.year());   logFile.print('-');
+        logFile.print(tinyGPS.date.month());  logFile.print('-');
+        logFile.print(tinyGPS.date.day());    logFile.print(' ');
+        logFile.print(tinyGPS.time.hour());   logFile.print(':');
+        logFile.print(tinyGPS.time.minute()); logFile.print(':');
+        logFile.print(tinyGPS.time.second()); logFile.print(',');
+        logFile.print(WiFi.channel(i)); logFile.print(',');
+        logFile.print(WiFi.RSSI(i));    logFile.print(',');
+        logFile.print(tinyGPS.location.lat(), 6); logFile.print(',');
+        logFile.print(tinyGPS.location.lng(), 6); logFile.print(',');
+        logFile.print(tinyGPS.altitude.meters(), 1); logFile.print(',');
+        logFile.print((tinyGPS.hdop.value(), 1));    logFile.print(',');
         logFile.print("WIFI");
         logFile.println();
         logFile.close();
@@ -292,35 +279,26 @@ void loop() {
   tft.setTextColor(ST77XX_WHITE);
   if (tinyGPS.location.isValid()) {
     if (loops==0) {
-      tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 6);
-      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 6); 
+      tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7);
+      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7); 
       tft.println("\nStarting ESP-DriveBy!");
       delay(2000);
       tft.fillScreen(ST77XX_BLACK);
       loops=1;
     }
     else {
-      /*tft.print("GPS logged ");
-      tft.print(tinyGPS.location.lat(), 6);
-      tft.print(", ");
-      tft.println(tinyGPS.location.lng(), 6);*/
+      tft.fillRect(30,144,85,16,ST77XX_BLACK);
+      tft.setCursor(0,144);
+      tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7); 
+      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
       lookForNetworks();
+      tft.setCursor(0,0);
+      tft.fillRect(90,0,35,7,ST77XX_BLACK);
+      tft.print("Networks seen: "); tft.println(countNetworks());
     }
   }
-  if (display == 1) {
-    // lcd.print("Lat: ");
-    // lcd.print(tinyGPS.location.lat(), 6);
-    // lcd.print("Lon: ");
-    // lcd.print(tinyGPS.location.lng(), 6);
-    display = 0;
-  } else {
-    // lcd.print("Seen: ");
-    // lcd.print(countNetworks());
-    // lcd.print("networks");
-    display = 1;
-  }
-  smartDelay(LOG_RATE);
 
+  smartDelay(LOG_RATE);
   if (millis() > 5000 && tinyGPS.charsProcessed() < 10)
     SerialMonitor.println("No GPS data received: check wiring");
 }
