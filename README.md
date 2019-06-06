@@ -22,3 +22,8 @@ Pinout for TFT.
 |CS      | D8      |
 |GND     | GND     |
 |VCC     | +3V3    |
+
+## Stuff to add
+- Shift from UTC timezone.  
+- NeoGPS lib?
+- Parse new values on input.
