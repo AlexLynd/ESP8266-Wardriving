@@ -27,3 +27,4 @@ Pinout for TFT.
 - Shift from UTC timezone.  
 - NeoGPS lib?
 - Parse new values on input.
+- Cross for Feather/NodeMCU
