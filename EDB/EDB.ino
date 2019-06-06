@@ -12,6 +12,7 @@
 int loops=0;
 double tmp_lat= 0;
 double tmp_lng= 0;
+int tmp_min=0;
 
 const unsigned char bmp [] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -176,10 +177,6 @@ const unsigned char bmp [] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-
-
-
-
 Adafruit_ST7735 tft = Adafruit_ST7735(4, 5, -1); // CS, DC, RST (sentinel)
 
 #define SD_CS 2
@@ -276,6 +273,7 @@ void lookForNetworks() {
   }
 }
 void loop() {
+  
   tft.setTextColor(ST77XX_WHITE);
   if (tinyGPS.location.isValid()) {
     if (loops==0) {
@@ -286,21 +284,30 @@ void loop() {
       tft.fillScreen(ST77XX_BLACK);
       loops=1;
     }
-    else {
+    else { /* non startup run */
+      lookForNetworks();
+      
+      tft.drawLine(0,142,127,142,ST77XX_WHITE);
       tft.fillRect(30,144,85,16,ST77XX_BLACK);
       tft.setCursor(0,144);
       tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7); 
       tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
-      lookForNetworks();
-      tft.setCursor(0,0);
-      tft.fillRect(90,0,35,7,ST77XX_BLACK);
-      tft.print("Networks seen: "); tft.println(countNetworks());
+      
+      tft.setCursor(34,0);
+      if (tmp_min!= tinyGPS.time.minute())
+        tft.drawRect(34,0,60,7,ST77XX_GREEN);
+      tft.printf("%02d",tinyGPS.date.month());tft.print("/");
+      tft.printf("%02d",tinyGPS.date.day()); tft.print(" ");
+      tft.printf("%02d",tinyGPS.time.hour()); tft.print(":");
+      tft.printf("%02d",tinyGPS.time.minute()); 
+      //tft.fillRect(90,0,35,7,ST77XX_BLACK);
+      //tft.print("Networks seen: "); tft.println(countNetworks());
     }
   }
 
   smartDelay(LOG_RATE);
   if (millis() > 5000 && tinyGPS.charsProcessed() < 10)
-    SerialMonitor.println("No GPS data received: check wiring");
+    SerialMonitor.println("No GPS data received: check wiringg");
 }
 
 static void smartDelay(unsigned long ms) {
@@ -363,7 +370,8 @@ void initializeSD() {
     tft.setCursor(55,40);
     tft.setTextColor(ST77XX_GREEN);
     tft.println("found");
-  for (int i= 0; i< MAX_LOG_FILES; i++) {
+    int i= 0;
+  for (; i< MAX_LOG_FILES; i++) {
     memset(logFileName, 0, strlen(logFileName));
     sprintf(logFileName, "%s%d.%s", LOG_FILE_PREFIX, i, LOG_FILE_SUFFIX);
     if (!SD.exists(logFileName)) { break; } 
