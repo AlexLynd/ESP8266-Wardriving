@@ -13,7 +13,7 @@ int loops=0;
 double tmp_lat= 0;
 double tmp_lng= 0;
 int tmp_min=0;
-
+String ssid= "";
 const unsigned char bmp [] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -249,10 +249,36 @@ void lookForNetworks() {
     for (uint8_t i= 1; i <= n; ++i) {
       if ((isOnFile(WiFi.BSSIDstr(i)) == -1) && (WiFi.channel(i) > 0) && (WiFi.channel(i) < 15)) { // Avoid erroneous channels
         File logFile = SD.open(logFileName, FILE_WRITE);
-        SerialMonitor.println("New network found");
+        tft.setCursor(0,20);
+        tft.fillRect(23,20,128,70,ST77XX_BLACK);
+        //SerialMonitor.println("New network found");
+        
         logFile.print(WiFi.BSSIDstr(i)); logFile.print(',');
+        tft.setTextColor(ST77XX_RED);
+        tft.print("BSS:");
+         tft.setTextColor(ST77XX_WHITE);
+        tft.println(WiFi.BSSIDstr(i)); //TFT
+        
         logFile.print(WiFi.SSID(i));     logFile.print(',');
-        logFile.print(getEncryption(i)); logFile.print(',');
+        tft.setTextColor(ST77XX_RED);
+        tft.print("ESS:");
+        tft.setTextColor(ST77XX_WHITE);
+        if (WiFi.isHidden(i)){
+          tft.println("*hidden*");
+          SerialMonitor.print("Found a hidden: "); SerialMonitor.println(WiFi.BSSIDstr(i));
+        }
+        else{
+          if (WiFi.SSID(i).length()>17) {
+            ssid= WiFi.SSID(i).substring(0,14)+"...";
+            tft.println(ssid);
+          }
+          else { tft.println(WiFi.SSID(i)); }
+        }
+        logFile.print(getEncryption_header(i)); logFile.print(',');
+         tft.setTextColor(ST77XX_RED);
+        tft.print("ENC:");
+         tft.setTextColor(ST77XX_WHITE);
+         tft.println(getEncryption(i));
         logFile.print(tinyGPS.date.year());   logFile.print('-');
         logFile.print(tinyGPS.date.month());  logFile.print('-');
         logFile.print(tinyGPS.date.day());    logFile.print(' ');
@@ -260,7 +286,15 @@ void lookForNetworks() {
         logFile.print(tinyGPS.time.minute()); logFile.print(':');
         logFile.print(tinyGPS.time.second()); logFile.print(',');
         logFile.print(WiFi.channel(i)); logFile.print(',');
+        tft.setTextColor(ST77XX_RED);
+        tft.print("CH :"); 
+        tft.setTextColor(ST77XX_WHITE);
+        tft.println(WiFi.channel(i));
         logFile.print(WiFi.RSSI(i));    logFile.print(',');
+        tft.setTextColor(ST77XX_RED);
+        tft.print("RSSI:"); 
+        tft.setTextColor(ST77XX_WHITE);
+        tft.println(WiFi.RSSI(i));
         logFile.print(tinyGPS.location.lat(), 6); logFile.print(',');
         logFile.print(tinyGPS.location.lng(), 6); logFile.print(',');
         logFile.print(tinyGPS.altitude.meters(), 1); logFile.print(',');
@@ -268,6 +302,8 @@ void lookForNetworks() {
         logFile.print("WIFI");
         logFile.println();
         logFile.close();
+        tft.println();
+        tft.print("Networks seen: "); tft.println(countNetworks());
       }
     }
   }
@@ -285,21 +321,27 @@ void loop() {
       loops=1;
     }
     else { /* non startup run */
-      lookForNetworks();
       
-      tft.drawLine(0,142,127,142,ST77XX_WHITE);
-      tft.fillRect(30,144,85,16,ST77XX_BLACK);
-      tft.setCursor(0,144);
-      tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7); 
-      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
-      
-      tft.setCursor(34,0);
-      if (tmp_min!= tinyGPS.time.minute())
-        tft.drawRect(34,0,60,7,ST77XX_GREEN);
+      tft.setCursor(32,0);
+      if (tmp_min!= tinyGPS.time.minute()) { /* TIME */
+        tft.fillRect(32,0,65,7,ST77XX_BLACK);
+        tmp_min= tinyGPS.time.minute();      }
       tft.printf("%02d",tinyGPS.date.month());tft.print("/");
       tft.printf("%02d",tinyGPS.date.day()); tft.print(" ");
       tft.printf("%02d",tinyGPS.time.hour()); tft.print(":");
-      tft.printf("%02d",tinyGPS.time.minute()); 
+      tft.printf("%02d",tinyGPS.time.minute());
+      tft.drawLine(30,0,30,8,ST77XX_WHITE);
+      tft.drawLine(30,8,98,8,ST77XX_WHITE);
+      tft.drawLine(98,8,98,0,ST77XX_WHITE);
+      lookForNetworks();
+      
+      tft.setCursor(0,144);  /* COORD */
+      tft.drawLine(0,142,127,142,ST77XX_WHITE);
+      tft.fillRect(30,144,85,16,ST77XX_BLACK);
+      tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7); 
+      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
+      
+      
       //tft.fillRect(90,0,35,7,ST77XX_BLACK);
       //tft.print("Networks seen: "); tft.println(countNetworks());
     }
@@ -394,7 +436,7 @@ void initializeSD() {
   }
 }
 
-String getEncryption(uint8_t network) {
+String getEncryption_header(uint8_t network) {
   byte encryption = WiFi.encryptionType(network);
   switch (encryption) {
     case 2:
@@ -407,5 +449,20 @@ String getEncryption(uint8_t network) {
       return "[ESS]";
     case 8:
       return "[WPA-PSK-CCMP+TKIP][WPA2-PSK-CCMP+TKIP][ESS]";
+  }
+}
+String getEncryption(uint8_t network) { // for return on tft
+  byte encryption = WiFi.encryptionType(network);
+  switch (encryption) {
+    case 2:
+      return "WPA/PSK";
+    case 5:
+      return "WEP";
+    case 4:
+      return "WPA2/PSK";
+    case 7:
+      return "OPEN";
+    case 8:
+      return "WPA/WPA2/PSK";
   }
 }
