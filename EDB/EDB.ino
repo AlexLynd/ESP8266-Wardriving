@@ -177,7 +177,7 @@ const unsigned char bmp [] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-Adafruit_ST7735 tft = Adafruit_ST7735(4, 5, -1); // CS, DC, RST (sentinel)
+Adafruit_ST7735 tft =Adafruit_ST7735(4, 5, -1); // CS, DC, RST (sentinel)
 
 #define SD_CS 2
 #define LOG_FILE_PREFIX "log"
@@ -222,27 +222,33 @@ void setup() {
   tft.println("***  ESP-DriveBy  ***\n");
   tft.println("Serial monitor ready");
   tft.println("Baud rate: 115200\n");
+  Serial.println("\nESP-DriveBy | alexlynd.com/projects/ESP-DriveBy");
+  Serial.println("***");
   initializeSD();
+  Serial.println("***");
   tft.println();
   initializeGPS();
   
 }
 void initializeGPS(){
   tft.print("GPS: ");
+  Serial.print("GPS ");
   if (millis() > 5000 && tinyGPS.charsProcessed() < 10) {
     tft.setTextColor(ST77XX_RED);
     tft.println("not found");
+    Serial.print("not detected, check wiring, baud rate or reset board.");
     while (true)
       if (!(millis() > 5000 && tinyGPS.charsProcessed() < 10))
         break;
   }
   tft.setTextColor(ST77XX_GREEN);
   tft.println("found");
+  Serial.print("detected, waiting for a fix.");
   tft.setTextColor(ST77XX_WHITE); 
   tft.println("Baud rate: 9600");
   tft.println("Waiting on GPS fix...");
 }
-void lookForNetworks() {
+void lookForNetworks() { // main stuff here
   int n = WiFi.scanNetworks();
   if (n == 0) { SerialMonitor.println("no networks found"); } 
   else {
@@ -252,8 +258,17 @@ void lookForNetworks() {
         tft.setCursor(0,20);
         tft.fillRect(23,20,128,70,ST77XX_BLACK);
         //SerialMonitor.println("New network found");
-        
+
+        Serial.println("***********");
+        Serial.print(tinyGPS.date.month()); Serial.print("/");
+        Serial.print(tinyGPS.date.day()); Serial.print("/");
+        Serial.print(tinyGPS.date.year()); Serial.print(" ");   
+        Serial.print(tinyGPS.time.hour()); Serial.print(":");
+        Serial.print(tinyGPS.time.minute()); Serial.print(":");
+        Serial.println(tinyGPS.time.second()); 
+          
         logFile.print(WiFi.BSSIDstr(i)); logFile.print(',');
+        Serial.print("BSSID: "); Serial.println(WiFi.BSSIDstr(i));
         tft.setTextColor(ST77XX_RED);
         tft.print("BSS:");
          tft.setTextColor(ST77XX_WHITE);
@@ -262,6 +277,7 @@ void lookForNetworks() {
         logFile.print(WiFi.SSID(i));     logFile.print(',');
         tft.setTextColor(ST77XX_RED);
         tft.print("ESS:");
+        Serial.print("ESSID: "); Serial.println(WiFi.SSID(i));
         tft.setTextColor(ST77XX_WHITE);
         if (WiFi.isHidden(i)){
           tft.println("*hidden*");
@@ -275,10 +291,12 @@ void lookForNetworks() {
           else { tft.println(WiFi.SSID(i)); }
         }
         logFile.print(getEncryption_header(i)); logFile.print(',');
-         tft.setTextColor(ST77XX_RED);
+        tft.setTextColor(ST77XX_RED);
+        Serial.print("Encryption: ");
+        Serial.println(getEncryption(i));
         tft.print("ENC:");
-         tft.setTextColor(ST77XX_WHITE);
-         tft.println(getEncryption(i));
+        tft.setTextColor(ST77XX_WHITE);
+        tft.println(getEncryption(i));
         logFile.print(tinyGPS.date.year());   logFile.print('-');
         logFile.print(tinyGPS.date.month());  logFile.print('-');
         logFile.print(tinyGPS.date.day());    logFile.print(' ');
@@ -290,11 +308,13 @@ void lookForNetworks() {
         tft.print("CH :"); 
         tft.setTextColor(ST77XX_WHITE);
         tft.println(WiFi.channel(i));
+        Serial.print("Channel: "); Serial.println(WiFi.channel(i));
         logFile.print(WiFi.RSSI(i));    logFile.print(',');
         tft.setTextColor(ST77XX_RED);
         tft.print("RSSI:"); 
         tft.setTextColor(ST77XX_WHITE);
         tft.println(WiFi.RSSI(i));
+        Serial.print("RSSI (strength): "); Serial.println(WiFi.RSSI(i)); 
         logFile.print(tinyGPS.location.lat(), 6); logFile.print(',');
         logFile.print(tinyGPS.location.lng(), 6); logFile.print(',');
         logFile.print(tinyGPS.altitude.meters(), 1); logFile.print(',');
@@ -304,6 +324,7 @@ void lookForNetworks() {
         logFile.close();
         tft.println();
         tft.print("Networks seen: "); tft.println(countNetworks());
+        Serial.print("Networks logged so far: "); Serial.println(countNetworks());
       }
     }
   }
@@ -314,7 +335,12 @@ void loop() {
   if (tinyGPS.location.isValid()) {
     if (loops==0) {
       tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7);
-      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7); 
+      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
+      Serial.println("Initial fix:"); 
+      Serial.print("Lat: "); Serial.println(tinyGPS.location.lat(), 7);
+      Serial.print("Lon: "); Serial.println(tinyGPS.location.lng(), 7); 
+      Serial.println("All processes good, starting ESP-DriveBy");
+      Serial.println("***");
       tft.println("\nStarting ESP-DriveBy!");
       delay(2000);
       tft.fillScreen(ST77XX_BLACK);
@@ -325,7 +351,8 @@ void loop() {
       tft.setCursor(32,0);
       if (tmp_min!= tinyGPS.time.minute()) { /* TIME */
         tft.fillRect(32,0,65,7,ST77XX_BLACK);
-        tmp_min= tinyGPS.time.minute();      }
+        tmp_min= tinyGPS.time.minute();      
+      }
       tft.printf("%02d",tinyGPS.date.month());tft.print("/");
       tft.printf("%02d",tinyGPS.date.day()); tft.print(" ");
       tft.printf("%02d",tinyGPS.time.hour()); tft.print(":");
@@ -341,15 +368,12 @@ void loop() {
       tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7); 
       tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
       
-      
-      //tft.fillRect(90,0,35,7,ST77XX_BLACK);
-      //tft.print("Networks seen: "); tft.println(countNetworks());
     }
   }
 
   smartDelay(LOG_RATE);
   if (millis() > 5000 && tinyGPS.charsProcessed() < 10)
-    SerialMonitor.println("No GPS data received: check wiringg");
+    SerialMonitor.println("GPS not found");
 }
 
 static void smartDelay(unsigned long ms) {
@@ -383,8 +407,7 @@ int isOnFile(String mac) {
   if (netFile) {
     while (netFile.available()) {
       currentNetwork = netFile.readStringUntil('\n');
-      if (currentNetwork.indexOf(mac) != -1) {
-        SerialMonitor.println("The network was already found");
+      if (currentNetwork.indexOf(mac) != -1) { // already found
         netFile.close();
         return currentNetwork.indexOf(mac);
       }
@@ -399,21 +422,22 @@ void initializeSD() {
   if (!SD.begin(SD_CS)) {
     tft.setTextColor(ST77XX_RED);
     tft.println("not found");
+    Serial.print("SD card not detected, waiting...");
     tft.setTextColor(ST77XX_WHITE);
     tft.println("Waiting on SD card...");
     while (true)
       if (SD.begin(SD_CS))
         break;
   }
-    tft.setTextColor(ST77XX_BLACK);  // cover by printing in black
-    tft.setCursor(54,40);
-    tft.println("not found");
-    tft.println("Waiting on SD card...");
-    tft.setCursor(55,40);
-    tft.setTextColor(ST77XX_GREEN);
-    tft.println("found");
-    int i= 0;
-  for (; i< MAX_LOG_FILES; i++) {
+  tft.setTextColor(ST77XX_BLACK);  // cover by printing in black
+  tft.setCursor(54,40);
+  tft.println("not found");
+  tft.println("Waiting on SD card...");
+  tft.setCursor(55,40);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.println("found");
+  Serial.println("SD card detected!");
+  for (int i=0; i< MAX_LOG_FILES; i++) {
     memset(logFileName, 0, strlen(logFileName));
     sprintf(logFileName, "%s%d.%s", LOG_FILE_PREFIX, i, LOG_FILE_SUFFIX);
     if (!SD.exists(logFileName)) { break; } 
@@ -421,6 +445,7 @@ void initializeSD() {
   tft.setTextColor(ST77XX_WHITE);
   tft.print("Creating: ");
   tft.println(logFileName);
+  Serial.println("Creating "); Serial.println(logFileName);
   File logFile = SD.open(logFileName, FILE_WRITE);
   if (logFile) {
     int i = 0;
