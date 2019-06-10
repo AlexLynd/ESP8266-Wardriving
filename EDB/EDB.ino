@@ -8,9 +8,8 @@
 #include <SPI.h>
 #include <TinyGPS++.h>
 
-int loops=0;
-int tmp_min=0;
-String ssid= "";
+int loops= 0;
+int tmp_min= 0;
 
 // Splash screen bitmap
 const unsigned char splash [] = {
@@ -186,7 +185,7 @@ Adafruit_ST7735 tft= Adafruit_ST7735(4, 5, -1); // CS DC RST | Adafruit Feather
 char logFileName[13];
 #define LOG_COLUMN_COUNT 11
 const String wigleHeaderFileFormat = "WigleWifi-1.4,appRelease=2.26,model=Feather,release=0.0.0,device=arduinoWardriving,display=3fea5e7,board=esp8266,brand=Adafruit";
-char * log_col_names[LOG_COLUMN_COUNT] = {
+char * log_col_names[LOG_COLUMN_COUNT] = { 
   "MAC", "SSID", "AuthMode", "FirstSeen", "Channel", "RSSI", "CurrentLatitude", "CurrentLongitude", "AltitudeMeters", "AccuracyMeters", "Type"
 };
 
@@ -196,12 +195,12 @@ unsigned long lastLog = 0;
 static const int RX= 0, TX= 15;
 static const uint32_t GPSBaud = 9600;
 SoftwareSerial ss(RX, TX);
-TinyGPSPlus tinyGPS;
+TinyGPSPlus GPS;
 
 void setup() {
   Serial.begin(115200);
-  tft.initR(INITR_BLACKTAB);  // Init ST7735S chip, black tab
   
+  tft.initR(INITR_BLACKTAB);
   tft.fillScreen(ST77XX_BLACK);
   tft.drawBitmap(0,0,splash,128,160, 0xFFFF);
   tft.setCursor(30,140);
@@ -229,13 +228,11 @@ void setup() {
 void initializeGPS(){
   tft.print("GPS: ");
   Serial.print("GPS ");
-  if (millis() > 5000 && tinyGPS.charsProcessed() < 10) {
+  if (millis() > 5000 && GPS.charsProcessed() < 10) {
     tft.setTextColor(ST77XX_RED);
     tft.println("not found");
     Serial.print("not detected, check wiring, baud rate or reset board.");
-    while (true)
-      if (!(millis() > 5000 && tinyGPS.charsProcessed() < 10))
-        break;
+    while (millis() > 5000 && GPS.charsProcessed() < 10) ;
   }
   tft.setTextColor(ST77XX_GREEN);
   tft.println("found");
@@ -253,15 +250,14 @@ void lookForNetworks() { // main stuff here
         File logFile = SD.open(logFileName, FILE_WRITE);
         tft.setCursor(0,20);
         tft.fillRect(23,20,128,70,ST77XX_BLACK);
-        //Serial.println("New network found");
 
         Serial.println("***********");
-        Serial.print(tinyGPS.date.month()); Serial.print("/");
-        Serial.print(tinyGPS.date.day()); Serial.print("/");
-        Serial.print(tinyGPS.date.year()); Serial.print(" ");   
-        Serial.print(tinyGPS.time.hour()); Serial.print(":");
-        Serial.print(tinyGPS.time.minute()); Serial.print(":");
-        Serial.println(tinyGPS.time.second()); 
+        Serial.print(GPS.date.month()); Serial.print("/");
+        Serial.print(GPS.date.day());   Serial.print("/");
+        Serial.print(GPS.date.year());  Serial.print(" ");   
+        Serial.print(GPS.time.hour());  Serial.print(":");
+        Serial.print(GPS.time.minute()); Serial.print(":");
+        Serial.println(GPS.time.second()); 
           
         logFile.print(WiFi.BSSIDstr(i)); logFile.print(',');
         Serial.print("BSSID: "); Serial.println(WiFi.BSSIDstr(i));
@@ -281,24 +277,23 @@ void lookForNetworks() { // main stuff here
         }
         else{
           if (WiFi.SSID(i).length()>17) {
-            ssid= WiFi.SSID(i).substring(0,14)+"...";
-            tft.println(ssid);
+            tft.println(WiFi.SSID(i).substring(0,14)+"...");
           }
           else { tft.println(WiFi.SSID(i)); }
         }
-        logFile.print(getEncryption_header(i)); logFile.print(',');
+        logFile.print(getEncryption(i,"SD")); logFile.print(',');
         tft.setTextColor(ST77XX_RED);
         Serial.print("Encryption: ");
-        Serial.println(getEncryption(i));
+        Serial.println(getEncryption(i,"tft"));
         tft.print("ENC:");
         tft.setTextColor(ST77XX_WHITE);
-        tft.println(getEncryption(i));
-        logFile.print(tinyGPS.date.year());   logFile.print('-');
-        logFile.print(tinyGPS.date.month());  logFile.print('-');
-        logFile.print(tinyGPS.date.day());    logFile.print(' ');
-        logFile.print(tinyGPS.time.hour());   logFile.print(':');
-        logFile.print(tinyGPS.time.minute()); logFile.print(':');
-        logFile.print(tinyGPS.time.second()); logFile.print(',');
+        tft.println(getEncryption(i,"tft"));
+        logFile.print(GPS.date.year());   logFile.print('-');
+        logFile.print(GPS.date.month());  logFile.print('-');
+        logFile.print(GPS.date.day());    logFile.print(' ');
+        logFile.print(GPS.time.hour());   logFile.print(':');
+        logFile.print(GPS.time.minute()); logFile.print(':');
+        logFile.print(GPS.time.second()); logFile.print(',');
         logFile.print(WiFi.channel(i)); logFile.print(',');
         tft.setTextColor(ST77XX_RED);
         tft.print("CH :"); 
@@ -311,10 +306,10 @@ void lookForNetworks() { // main stuff here
         tft.setTextColor(ST77XX_WHITE);
         tft.println(WiFi.RSSI(i));
         Serial.print("RSSI (strength): "); Serial.println(WiFi.RSSI(i)); 
-        logFile.print(tinyGPS.location.lat(), 6); logFile.print(',');
-        logFile.print(tinyGPS.location.lng(), 6); logFile.print(',');
-        logFile.print(tinyGPS.altitude.meters(), 1); logFile.print(',');
-        logFile.print((tinyGPS.hdop.value(), 1));    logFile.print(',');
+        logFile.print(GPS.location.lat(), 6); logFile.print(',');
+        logFile.print(GPS.location.lng(), 6); logFile.print(',');
+        logFile.print(GPS.altitude.meters(), 1); logFile.print(',');
+        logFile.print((GPS.hdop.value(), 1));    logFile.print(',');
         logFile.print("WIFI");
         logFile.println();
         logFile.close();
@@ -328,13 +323,13 @@ void lookForNetworks() { // main stuff here
 void loop() {
   
   tft.setTextColor(ST77XX_WHITE);
-  if (tinyGPS.location.isValid()) {
+  if (GPS.location.isValid()) {
     if (loops==0) {
-      tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7);
-      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
+      tft.print("Lat: "); tft.println(GPS.location.lat(), 7);
+      tft.print("Lon: "); tft.println(GPS.location.lng(), 7);
       Serial.println("Initial fix:"); 
-      Serial.print("Lat: "); Serial.println(tinyGPS.location.lat(), 7);
-      Serial.print("Lon: "); Serial.println(tinyGPS.location.lng(), 7); 
+      Serial.print("Lat: "); Serial.println(GPS.location.lat(), 7);
+      Serial.print("Lon: "); Serial.println(GPS.location.lng(), 7); 
       Serial.println("All processes good, starting ESP-DriveBy");
       Serial.println("***");
       tft.println("\nStarting ESP-DriveBy!");
@@ -345,14 +340,14 @@ void loop() {
     else { /* non startup run */
       
       tft.setCursor(32,0);
-      if (tmp_min!= tinyGPS.time.minute()) { /* TIME */
+      if (tmp_min!= GPS.time.minute()) { /* TIME */
         tft.fillRect(32,0,65,7,ST77XX_BLACK);
-        tmp_min= tinyGPS.time.minute();      
+        tmp_min= GPS.time.minute();      
       }
-      tft.printf("%02d",tinyGPS.date.month());tft.print("/");
-      tft.printf("%02d",tinyGPS.date.day()); tft.print(" ");
-      tft.printf("%02d",tinyGPS.time.hour()); tft.print(":");
-      tft.printf("%02d",tinyGPS.time.minute());
+      tft.printf("%02d",GPS.date.month());tft.print("/");
+      tft.printf("%02d",GPS.date.day()); tft.print(" ");
+      tft.printf("%02d",GPS.time.hour()); tft.print(":");
+      tft.printf("%02d",GPS.time.minute());
       tft.drawLine(30,0,30,8,ST77XX_WHITE);
       tft.drawLine(30,8,98,8,ST77XX_WHITE);
       tft.drawLine(98,8,98,0,ST77XX_WHITE);
@@ -361,14 +356,14 @@ void loop() {
       tft.setCursor(0,144);  /* COORD */
       tft.drawLine(0,142,127,142,ST77XX_WHITE);
       tft.fillRect(30,144,85,16,ST77XX_BLACK);
-      tft.print("Lat: "); tft.println(tinyGPS.location.lat(), 7); 
-      tft.print("Lon: "); tft.println(tinyGPS.location.lng(), 7);
+      tft.print("Lat: "); tft.println(GPS.location.lat(), 7); 
+      tft.print("Lon: "); tft.println(GPS.location.lng(), 7);
       
     }
   }
 
   smartDelay(LOG_RATE);
-  if (millis() > 5000 && tinyGPS.charsProcessed() < 10)
+  if (millis() > 5000 && GPS.charsProcessed() < 10)
     Serial.println("GPS not found");
 }
 
@@ -376,7 +371,7 @@ static void smartDelay(unsigned long ms) {
   unsigned long start = millis();
   do {
     while (ss.available())
-      tinyGPS.encode(ss.read());
+      GPS.encode(ss.read());
   } while (millis() - start < ms);
 }
 
@@ -398,7 +393,7 @@ int countNetworks() {
 }
 
 int isOnFile(String mac) {
-  File netFile = SD.open(logFileName);
+  File netFile= SD.open(logFileName);
   String currentNetwork;
   if (netFile) {
     while (netFile.available()) {
@@ -421,7 +416,7 @@ void initializeSD() {
     Serial.print("SD card not detected, waiting...");
     tft.setTextColor(ST77XX_WHITE);
     tft.println("Waiting on SD card...");
-    while (!SD.begin(SD_CS)) ;
+    while (!SD.begin(SD_CS)) ; // wait until SD mounts
   }
   tft.setTextColor(ST77XX_BLACK);  // cover by printing in black
   tft.setCursor(54,40);
@@ -442,11 +437,10 @@ void initializeSD() {
   Serial.println("Creating "); Serial.println(logFileName);
   File logFile = SD.open(logFileName, FILE_WRITE);
   if (logFile) {
-    int i = 0;
     logFile.println(wigleHeaderFileFormat);
-    for (; i < LOG_COLUMN_COUNT; i++) {
+    for (int i=0; i< LOG_COLUMN_COUNT; i++) {
       logFile.print(log_col_names[i]);
-      if (i < LOG_COLUMN_COUNT - 1)
+      if (i< LOG_COLUMN_COUNT-1)
         logFile.print(',');
       else
         logFile.println();
@@ -455,33 +449,23 @@ void initializeSD() {
   }
 }
 
-String getEncryption_header(uint8_t network) {
+String getEncryption(uint8_t network, String stream) {
   byte encryption = WiFi.encryptionType(network);
   switch (encryption) {
     case 2:
+      if (stream=="tft") { return "WPA/PSK"; }
       return "[WPA-PSK-CCMP+TKIP][ESS]";
     case 5:
+      if (stream=="tft") { return "WEP"; }
       return "[WEP][ESS]";
     case 4:
+      if (stream=="tft") { return "WPA2/PSK"; }
       return "[WPA2-PSK-CCMP+TKIP][ESS]";
     case 7:
+      if (stream=="tft") { return "OPEN" ; }
       return "[ESS]";
     case 8:
+      if (stream=="tft") { return "WPA/WPA2/PSK"; }
       return "[WPA-PSK-CCMP+TKIP][WPA2-PSK-CCMP+TKIP][ESS]";
-  }
-}
-String getEncryption(uint8_t network) { // for return on tft
-  byte encryption = WiFi.encryptionType(network);
-  switch (encryption) {
-    case 2:
-      return "WPA/PSK";
-    case 5:
-      return "WEP";
-    case 4:
-      return "WPA2/PSK";
-    case 7:
-      return "OPEN";
-    case 8:
-      return "WPA/WPA2/PSK";
   }
 }
