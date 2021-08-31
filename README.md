@@ -1,2 +1,2 @@
 # ESP8266 Wardriving
-Wardriving with the ESP8266
+A compilation of scripts to visualize wardriving data in Jupyter Notebook for the ESP8266.
