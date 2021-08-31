@@ -22,12 +22,17 @@ int networks = 0;
 #define LOG_RATE 500
 char currentTime[5];
         
-SoftwareSerial ss(D4, D3); // RX, TX
+SoftwareSerial ss(D3, D4); // RX, TX
 TinyGPSPlus tinyGPS;
 
 void setup() {
   Serial.begin(115200);
+
+//  pinMode(D3,/
   ss.begin(9600);
+
+
+  
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // OLED address
   display.clearDisplay();
   display.setTextSize(1);
@@ -52,12 +57,12 @@ void setup() {
   delay(500);
   display.println();
   if (ss.available() > 0) {
-    display.println("GPS: found");
-    display.println("Waiting on fix...");
+    Serial.println("GPS: found");
+    Serial.println("Waiting on fix...");
   }
   else {
-    display.println("GPS: not found");
-    display.println("Check wiring & reset.");
+    Serial.println("GPS: not found");
+    Serial.println("Check wiring & reset.");
   }
   display.display();
   while (!tinyGPS.location.isValid()) {
