@@ -39,7 +39,7 @@ void setup() {
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
   WiFi.mode(WIFI_STA); WiFi.disconnect();
-  display.println("**   NetDash 1.0   **\n");
+  display.println("**   ProbeHunter   **\n");
 
   /* initialize SD card */
   display.print("SD Card: ");
