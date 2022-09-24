@@ -4,7 +4,7 @@
 #include <SD.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS++.h>
-#include <Time.h>   
+#include <TimeLib.h>   
 
 #define UTC_offset -7  // PDT
 #define SD_CS      D8
@@ -33,7 +33,7 @@ void setup() {
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
   WiFi.mode(WIFI_STA); WiFi.disconnect();
-  display.println("**   NetDash 1.0   **\n");
+  display.println("* ESP8266 WarDriver *\n");
 
   /* initialize SD card */
   display.print("SD Card: ");
@@ -83,7 +83,7 @@ void lookForNetworks() {
   }
   else {
     for (int i = 0; i < n; ++i) {
-      if ((isOnFile(WiFi.BSSIDstr(i)) == -1) && (WiFi.channel(i) > 0) && (WiFi.channel(i) < 15)) {
+      if ((WiFi.channel(i) > 0) && (WiFi.channel(i) < 15)) {
         display.clearDisplay();
         display.setCursor(48, 0);
         sprintf_P(currentTime, PSTR("%02d:%02d"),hour(),minute());
@@ -154,21 +154,21 @@ static void smartDelay(unsigned long ms) {
   } while (millis() - start < ms);
 }
 
-int isOnFile(String mac) {
-  File netFile = SD.open(logFileName);
-  String currentNetwork;
-  if (netFile) {
-    while (netFile.available()) {
-      currentNetwork = netFile.readStringUntil('\n');
-      if (currentNetwork.indexOf(mac) != -1) {
-        netFile.close();
-        return currentNetwork.indexOf(mac);
-      }
-    }
-    netFile.close();
-    return currentNetwork.indexOf(mac);
-  }
-}
+// int isOnFile(String mac) {
+//   File netFile = SD.open(logFileName);
+//   String currentNetwork;
+//   if (netFile) {
+//     while (netFile.available()) {
+//       currentNetwork = netFile.readStringUntil('\n');
+//       if (currentNetwork.indexOf(mac) != -1) {
+//         netFile.close();
+//         return currentNetwork.indexOf(mac);
+//       }
+//     }
+//     netFile.close();
+//     return currentNetwork.indexOf(mac);
+//   }
+// }
 
 void initializeSD() { // create new CSV file and add WiGLE headers
   int i = 0; logFileName = "log0.csv";
