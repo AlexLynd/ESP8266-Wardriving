@@ -199,8 +199,7 @@ String getEncryption(uint8_t network, String src) { // return encryption for WiG
     case 7:
       if (src=="screen") { return "NONE" ; }
       return "[ESS]";
-    case 8:
-      if (src=="screen") { return "AUTO"; }
-      return "[WPA-PSK-CCMP+TKIP][WPA2-PSK-CCMP+TKIP][ESS]";
   }
+  if (src=="screen") { return "AUTO"; }
+  return "[WPA-PSK-CCMP+TKIP][WPA2-PSK-CCMP+TKIP][ESS]";      
 }
